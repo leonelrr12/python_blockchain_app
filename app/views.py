@@ -15,8 +15,8 @@ posts = []
 
 def fetch_posts():
     """
-    Function to fetch the chain from a blockchain node, parse the
-    data and store it locally.
+    Función para recuperar la cadena de un nodo de blockchain, analizar el
+    datos y almacenarlos localmente.
     """
     get_chain_address = "{}/chain".format(CONNECTED_NODE_ADDRESS)
     response = requests.get(get_chain_address)
