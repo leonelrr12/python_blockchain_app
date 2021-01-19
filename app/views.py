@@ -6,8 +6,8 @@ from flask import render_template, redirect, request
 
 from app import app
 
-# The node with which our application interacts, there can be multiple
-# such nodes as well.
+# El nodo con el que interactúa nuestra aplicación, puede haber múltiples
+# de tales nodos también.
 CONNECTED_NODE_ADDRESS = "http://127.0.0.1:8000"
 
 posts = []

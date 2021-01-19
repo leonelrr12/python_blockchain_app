@@ -137,16 +137,17 @@ class Blockchain:
 
 app = Flask(__name__)
 
-# the node's copy of blockchain
+# la copia del nodo de blockchain
 blockchain = Blockchain()
 blockchain.create_genesis_block()
 
-# the address to other participating members of the network
+# la dirección a otros miembros participantes de la red
 peers = set()
 
 
-# endpoint to submit a new transaction. This will be used by
-# our application to add new data (posts) to the blockchain
+# endpoint para enviar una nueva transacción. Esto será utilizado por
+# nuestra aplicación para agregar nuevos datos (publicaciones) 
+# a la cadena de bloques
 @app.route('/new_transaction', methods=['POST'])
 def new_transaction():
     tx_data = request.get_json()
@@ -157,20 +158,31 @@ def new_transaction():
             return "Invalid transaction data", 404
 
     tx_data["timestamp"] = time.time()
-
     blockchain.add_new_transaction(tx_data)
 
     return "Success", 201
 
 
-# endpoint to return the node's copy of the chain.
-# Our application will be using this endpoint to query
-# all the posts to display.
+# endpoint para devolver la copia del nodo de la cadena.
+# Nuestra aplicación utilizará este punto final para consultar
+# todas las publicaciones para mostrar.
 @app.route('/chain', methods=['GET'])
 def get_chain():
     chain_data = []
     for block in blockchain.chain:
         chain_data.append(block.__dict__)
+
+    return json.dumps({"length": len(chain_data),
+                       "chain": chain_data,
+                       "peers": list(peers)})
+
+
+@app.route('/unconfirmed', methods=['GET'])
+def get_unconfirmed():
+    chain_data = []
+    for block in blockchain.unconfirmed_transactions:
+        chain_data.append(block)
+
     return json.dumps({"length": len(chain_data),
                        "chain": chain_data,
                        "peers": list(peers)})
@@ -211,10 +223,10 @@ def register_new_peers():
 
 @app.route('/register_with', methods=['POST'])
 def register_with_existing_node():
-    """
-    Internally calls the `register_node` endpoint to
-    register current node with the node specified in the
-    request, and sync the blockchain as well as peer data.
+    """    
+    Internamente llama al extremo `register_node` a
+    registrar el nodo actual con el nodo especificado en el
+    solicitar y sincronizar la cadena de bloques, así como los datos de pares.
     """
     node_address = request.get_json()["node_address"]
     if not node_address:
@@ -223,7 +235,7 @@ def register_with_existing_node():
     data = {"node_address": request.host_url}
     headers = {'Content-Type': "application/json"}
 
-    # Make a request to register with remote node and obtain information
+    # Realice una solicitud para registrarse con un nodo remoto y obtener información
     response = requests.post(node_address + "/register_node",
                              data=json.dumps(data), headers=headers)
 
@@ -287,8 +299,8 @@ def get_pending_tx():
 
 def consensus():
     """
-    Our naive consnsus algorithm. If a longer valid chain is
-    found, our chain is replaced with it.
+    Nuestro algoritmo de consenso ingenuo. Si una cadena válida más larga es
+    encontrado, nuestra cadena se reemplaza con él.
     """
     global blockchain
 
@@ -312,9 +324,9 @@ def consensus():
 
 def announce_new_block(block):
     """
-    A function to announce to the network once a block has been mined.
-    Other blocks can simply verify the proof of work and add it to their
-    respective chains.
+    Una función para anunciar a la red una vez que se ha minado un bloque.
+     Otros bloques pueden simplemente verificar la prueba de trabajo y agregarla a su
+     respectivas cadenas.
     """
     for peer in peers:
         url = "{}add_block".format(peer)
@@ -324,4 +336,4 @@ def announce_new_block(block):
                       headers=headers)
 
 # Uncomment this line if you want to specify the port number in the code
-#app.run(debug=True, port=8000)
+app.run(debug=True, port=8000)
